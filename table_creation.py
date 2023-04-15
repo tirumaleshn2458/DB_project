@@ -1,3 +1,4 @@
+import psycopg2
 #creating the property table
 property_table='''create table if not exists property(
 property_id varchar(8) not null primary key,
