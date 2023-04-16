@@ -50,6 +50,7 @@ state varchar(20) not null,
 location varchar(50) not null,
 description varchar(250) not null,
 availability varchar(10) not null,
+date_posted date not null,
 price float not null,
 foreign key (agents_id) references agents
 );'''
@@ -58,10 +59,10 @@ foreign key (agents_id) references agents
 credit_card='''create table if not exists credit_card(
 creditcard_id varchar(8) primary key,
 card_number varchar(30),
-renter_id varchar(8),
+renters_id varchar(8),
 address varchar(50),
 card_expiry_date varchar(8),
-foreign key renter_id references(renters),
+foreign key (renters_id) references renter
 );'''
 
 #property_booking
