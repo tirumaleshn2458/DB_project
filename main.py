@@ -8,7 +8,7 @@ import string
 st.title('Real Estate Agency')
 
 
-def query_execution(query,variables):
+def query_execution(query,variables=None):
     connection=psycopg2.connect(database='real_estate_db',user='tirumaleshn2000',password='',host='localhost',port='5431')
     cursor=connection.cursor()
     cursor.execute(query,variables)
@@ -17,7 +17,7 @@ def query_execution(query,variables):
     connection.close()
     return record
 
-def entry_execution(query,variables):
+def entry_execution(query,variables=None):
     connection=psycopg2.connect(database='real_estate_db',user='tirumaleshn2000',password='',host='localhost',port='5431')
     cursor=connection.cursor()
     cursor.execute(query,variables)
@@ -43,6 +43,13 @@ class proceed:
         #add property type, city, state, location, description, availability, price
         st.write('Please enter the details of the property')
         property_type_empty=st.empty()
+        house_rooms_empty=st.empty()
+        house_sft_empty=st.empty()
+        apartment_rooms_empty=st.empty()
+        apartment_sft_empty=st.empty()
+        building_type_empty=st.empty()
+        cb_sft_empty=st.empty()
+        business_type_empty=st.empty()
         property_location_empty=st.empty()
         property_city_empty=st.empty()
         property_state_empty=st.empty()
@@ -51,6 +58,19 @@ class proceed:
         property_availability_empty=st.empty()
         add_property_button_empty=st.empty()
         property_type=property_type_empty.selectbox('Property type',['House','Apartment','Commercial Building'])
+        if property_type=='House':
+            house_rooms=house_rooms_empty.text_input('Number of rooms')
+            house_sft=house_sft_empty.text_input('Square footage')
+            house_sft=float(house_sft)
+        if property_type=='Apartment':
+            apartment_rooms=apartment_rooms_empty.text_input('Number of rooms')
+            apartment_sft=apartment_sft_empty.text_input('Square footage')
+            building_type=building_type_empty.text_input('Building Type')
+            apartment_sft=float(apartment_sft)
+        if property_type=='Commercial Building':
+            cb_sft=cb_sft_empty.text_input('Square footage')
+            business_type=business_type_empty.text_input('Business Type')
+            cb_sft=float(cb_sft)
         property_location=property_location_empty.text_input('Property location')
         property_city=property_city_empty.text_input('City')
         property_state=property_state_empty.text_input('State')
@@ -75,6 +95,22 @@ class proceed:
             add_property_values=(property_id,agents_id,property_type,property_city,property_state,property_location,property_desc,
             property_availability,property_price,date_posted)
             entry_execution(add_property_query,add_property_values)
+            if property_type=='House':
+                house_id='h'+property_id
+                query='''insert into house(house_id,property_id,rooms,sqt_area) values (%s,%s,%s,%s)'''
+                values=(house_id,property_id,house_rooms,house_sft)
+                entry_execution(query,values)
+            if property_id=='Apartment':
+                apts_id='a'+property_id
+                query='''insert into apartment(apts_id,property_id,rooms,sqt_area) values (%s,%s,%s,%s)'''
+                values=(apts_id,property_id,apartment_rooms,apartment_sft)
+                entry_execution(query,values)
+            if property_id=='Commercial Building':
+                cb_id='c'+property_id
+                query='''insert into commercial_building(building_id,property_id,business_type,sqf_area) values (%s,%s,%s,%s)'''
+                values=(cb_id,property_id,business_type,cb_sft)
+                entry_execution(query,values)
+
             success_empty=st.empty()
             success_empty.success('New property added')
             property_type_empty.empty()
@@ -112,7 +148,7 @@ class proceed:
                 '  \n**Description:** ','  \n**Availability:** ','  \n**Price:** ')
             with col2:
                 st.write(pro[2],'  \n',pro[3],'  \n',pro[4],'  \n',pro[5],
-                '  \n',pro[6],'  \n',pro[7],'  \n',pro[8])
+                '  \n',pro[6],'  \n',pro[7],'  \n',str(pro[9]))
             if st.button('Delete'):
                 property_id=pro[0]
                 delete_query='delete from property where property_id = %s'
@@ -155,22 +191,24 @@ class proceed:
             #
             agent_id='a'+user_id
             property_id=pro[0]
+            agent_id=pro[1]
             type=pro[2]
             city=pro[3]
             state=pro[4]
             location=pro[5]
             description=pro[6]
             availability=pro[7]
-            price=pro[8]
+            date=pro[8]
+            price=pro[9]
 
             property_type_index=['House','Apartment','Commercial Building'].index(pro[2])
             property_type=st.selectbox('Property type',['House','Apartment','Commercial Building'],index=property_type_index)
-            availability_index=['Yes','No'].index(pro[7])
-            property_location=st.text_input('Property location',value=pro[5])
-            property_city=st.text_input('City',value=pro[3])
-            property_state=st.text_input('State',value=pro[4])
-            property_desc=st.text_input('Description',value=pro[6])
-            property_price=st.text_input('Price',value=pro[8])
+            availability_index=['Yes','No'].index(availability)
+            property_location=st.text_input('Property location',value=location)
+            property_city=st.text_input('City',value=city)
+            property_state=st.text_input('State',value=state)
+            property_desc=st.text_input('Description',value=description)
+            property_price=st.text_input('Price',value=price)
             if len(property_price)!=0:
                 try:
                     property_price=float(property_price)
@@ -216,12 +254,201 @@ class proceed:
             ob_pro.modify_property(user_id)
 
     def search(self):
-        st.write('Search options')
+        st.subheader('Search for properties')
+        properties_query='''select * from property'''
+        properties=query_execution(properties_query)
+        record=ob_login.user_status_list[-1]
+        user_id=record[0]
+        for pro in properties:
+            type=pro[2]
+            location=pro[5]
+            city=pro[3]
+            state=pro[4]
+            button_empty=st.empty()
+            col1,col2=st.columns(2)
+            with col1:
+                st.write('Property type: ')
+                st.write('Location: ')
+                st.write('City: ')
+                st.write('State: ')
+            with col2:
+                st.write(type)
+                st.write(location)
+                st.write(city)
+                st.write(state)
+            search_options=st.selectbox('Select the action',['View','Book'],key=pro[0])
+            if search_options=='View':
+                pass
+            else:
+                renter_id='r'+user_id
+                query='''select * from credit_card where renters_id = %s'''
+                values=(renter_id,)
+                credit_card_records=query_execution(query,values)
+                #st.write(credit_card_records)
+                if len(credit_card_records)==0:
+                    creditcard_number=st.text_input('Card Number')
+                    billing_address=st.text_input('Billing Address')
+                    expiry_date=st.text_input('Expiraty date')
+                    if st.button('Add card and book'):
+                        creditcard_id=get_random_string(7)
+                        card_num_exists='''select card_number from credit_card where renters_id = %s and card_number = %s'''
+                        values=(renter_id,creditcard_number,)
+                        records=query_execution(card_num_exists,values)
+                        if records==0:
+                            add_cc_query='''insert into credit_card(creditcard_id,card_number,renters_id,address,card_expiry_date) values (%s,%s,%s,%s,%s)'''
+                            add_cc_values=(creditcard_id,creditcard_number,renter_id,billing_address,expiry_date)
+                            entry_execution(add_cc_query,add_cc_values)
+                            st.success('Success')
+                        else:
+                            st.info('Card already exists')
+
+                else:
+                    card_numbers=[]
+                    for record in credit_card_records:
+                        card_numbers.append(record[1])
+                    select_cc=st.selectbox('Select card',options=['Select from below']+card_numbers,key=pro[0])
+                    if select_cc!='Select from below':
+                        card_number_index=card_numbers.index(select_cc)
+                        current_card=credit_card_records[card_number_index]
+                        st.write('Card Number: ',current_card[1])
+                        st.write('Expiry date: ',current_card[4])
+                        st.write('Billing address: ',current_card[3])
+                        if st.button('Book',key=pro[0]):
+                            st.success('Success')
+
+            st.write('--------------')
+
+
+
+
+
+
+    def manage_payments(self):
+        record=ob_login.user_status_list[-1]
+        user_id=record[0]
+        select_op=st.radio('',['Add new card','Modify card','Delete card'])
+        if select_op=='Add new card':
+            st.write('Credit card operations')
+            #
+            query='''select * from credit_card where renters_id = %s'''
+            renter_id='r'+user_id
+            values=(renter_id,)
+            credit_card_records=query_execution(query,values)
+            #st.write(credit_card_records)
+            cc_num=[]
+            for cc in credit_card_records:
+                cc_num.append(cc[1])
+            #
+            card_number=st.text_input('Card Number')
+            expiry_date=st.text_input('Expiry')
+            billing_address=st.text_input('Address')
+            if st.button('Add'):
+                creditcard_id=get_random_string(7)
+                card_num_exists='''select card_number from credit_card where renters_id = %s and card_number = %s'''
+                values=(renter_id,card_number,)
+                records=query_execution(card_num_exists,values)
+                if len(records)!=0:
+                    st.error('Card already exists')
+                else:
+                    while True:
+                        creditcard_id=get_random_string(7)
+                        cc_id_exists='''select * from credit_card where creditcard_id = %s'''
+                        values=(creditcard_id,)
+                        records=query_execution(cc_id_exists,values)
+                        if len(records)==0:
+                            cc_insert='''insert into credit_card (creditcard_id,card_number,renters_id,address,card_expiry_date) values (%s,%s,%s,%s,%s)'''
+                            cc_values=(creditcard_id,card_number,renter_id,billing_address,expiry_date)
+                            entry_execution(cc_insert,cc_values)
+                            break
+                        else:
+                            pass
+                    st.success('Card added successfully')
+
+        if select_op=='Delete card':
+            st.write('Delete card')
+            query='''select * from credit_card where renters_id = %s'''
+            renter_id='r'+user_id
+            values=(renter_id,)
+            credit_card_records=query_execution(query,values)
+            cc_num=[]
+            for cc in credit_card_records:
+                cc_num.append(cc[1])
+            #st.write(cc_num)
+            cc_select=st.selectbox('',cc_num)
+            if cc_select!='Select':
+                #st.write(credit_card_records)
+                cc_index=cc_num.index(cc_select)
+                current_card=credit_card_records[cc_index]
+                card_id=current_card[0]
+                card_number=current_card[1]
+                renters_id=current_card[2]
+                address=current_card[3]
+                expiry_date=current_card[4]
+                #st.write(current_card)
+                col1,col2=st.columns(2)
+                with col1:
+                    st.write('Card Number: ')
+                    st.write('Expiry: ')
+                    st.write('Address: ')
+                with col2:
+                    st.write(card_number)
+                    st.write(expiry_date)
+                    st.write(address)
+                if st.button('Delete'):
+                    delete_card_query='''delete from credit_card where card_number = %s'''
+                    values=(card_number,)
+                    entry_execution(delete_card_query,values)
+                    st.success('Card removed successfully')
+                    time.sleep(1)
+                    cc_select='Select'
+                    st.experimental_rerun()
+
+
+        if select_op=='Modify card':
+            st.write('Modify card')
+            query='''select * from credit_card where renters_id = %s'''
+            renter_id='r'+user_id
+            values=(renter_id,)
+            credit_card_records=query_execution(query,values)
+            cc_num=[]
+            for cc in credit_card_records:
+                cc_num.append(cc[1])
+            st.write(cc_num)
+            cc_select=st.selectbox('',cc_num)
+            if cc_select!='Select':
+                st.write(credit_card_records)
+                cc_index=cc_num.index(cc_select)
+                current_card=credit_card_records[cc_index]
+                card_id=current_card[0]
+                card_number=current_card[1]
+                renters_id=current_card[2]
+                address=current_card[3]
+                expiry_date=current_card[4]
+                new_card_number=st.text_input('Card Number: ',value=card_number)
+                new_expiry_date=st.text_input('Expiry: ',value=expiry_date)
+                new_address=st.text_input('Address: ',value=address)
+                if (new_card_number==card_number)&(new_expiry_date==expiry_date)&(address==new_address):
+                    pass
+                else:
+                    if st.button('Modify'):
+                        update_query='''UPDATE credit_card SET card_number = %s, card_expiry_date = %s, address = %s where creditcard_id = %s'''
+                        values=(card_number,expiry_date,address,card_id)
+                        entry_execution(update_query,values)
+                        st.success('Modified successfully')
+
+
+
+
+
+
+
+
+
     def renter(self):
         st.header('Renter page')
-        renter_options=st.selectbox('Please select the options',['Search for the properties','Add credit card for property booking'])
-        if renter_options=='Add credit card for property booking':
-            st.write('Add or delete credit cards')
+        renter_options=st.selectbox('Please select the options',['Search for the properties','Manage payments'])
+        if renter_options=='Manage payments':
+            ob_pro.manage_payments()
         if renter_options=='Search for the properties':
             ob_pro.search()
 
@@ -312,7 +539,7 @@ def register():
         date_empty=st.empty()
         todays_date=date_empty.date_input('')
         date_empty.empty()
-        move_in_date=move_in_date_empty.date_input('Move-In Date')
+        move_in_date=move_in_date_empty.date_input('Move-In Date',min_value=todays_date)
         preferedlocation=preferedlocation_empty.text_input('Prefered Location')
         budget=budget_empty.text_input('Budget')
 
