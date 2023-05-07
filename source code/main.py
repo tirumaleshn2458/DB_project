@@ -8,7 +8,7 @@ from datetime import timedelta
 
 st.title('Real Estate Agency')
 
-
+todays_date=datetime.date.today()
 def query_execution(query,variables=None):
     connection=psycopg2.connect(database='real_estate_db',user='tirumaleshn2000',password='',host='localhost',port='5431')
     cursor=connection.cursor()
@@ -123,8 +123,8 @@ class proceed:
         st.write('Please enter the details of the property')
         property_type_empty=st.empty()
 
-        property_type=property_type_empty.selectbox('Property type',['House','Apartment','Commercial Building'])
-        rent_or_sell=st.selectbox('Rent or Sale?',['Rental','Sale'])
+        property_type=property_type_empty.selectbox('Property type',['House','Apartment','Commercial Building','Vacation Home','Land'])
+        sale_or_rent=st.selectbox('Rent or Sale?',['Rental','Sale'])
         if property_type=='House':
             with st.form('house',clear_on_submit=True):
                 house_rooms=st.number_input('Number of rooms',step=1,value=0)
@@ -132,16 +132,24 @@ class proceed:
                 property_location=st.text_input('Property location',value='')
                 property_city=st.text_input('City',value='')
                 property_state=st.text_input('State',value='')
+                nearby_schools=st.text_input('Enter nearby school names(if exists) using commas',value='')
+                if len(nearby_schools)!=0:
+                    nearby_schools_list=nearby_schools.split(',')
+
+                else:
+                    nearby_schools_list='None'
+                crime_rate=st.number_input('Crime Rate',min_value=0.0,max_value=100.0,step=0.1)
                 property_desc=st.text_input('Description',value='')
-                if rent_or_sell=='Rental':
+                if sale_or_rent=='Rental':
                     todays_date=datetime.date.today()
                     property_sd=st.date_input('Lease start date',min_value=todays_date)
                     property_ed=st.date_input('Lease end date',value=property_sd,min_value=property_sd)
-                    property_price=st.number_input('Rental price per month',value=0)
-                elif rent_or_sell=='Sale':
+                    property_price=st.number_input('Rental price per month',value=0.0,step=0.1)
+                elif sale_or_rent=='Sale':
+                    todays_date=datetime.date.today()
                     property_sd=None
                     property_ed=None
-                    property_price=st.number_input('Sale price',value=0)
+                    property_price=st.number_input('Sale price',value=0.0,step=0.1)
 
                 property_availability=st.radio('Is it available? ',['Yes','No'],index=0)
 
@@ -149,16 +157,20 @@ class proceed:
                     property_id='pr'+get_random_string(5)
                     agents_id='a'+user_id
                     date_posted=todays_date
-                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent)
-                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent,crime_rate)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
                     add_property_values=(property_id,agents_id,property_type,property_city,property_state,property_location,property_desc,
-                    property_availability,property_price,date_posted,property_sd,property_ed,rent_or_sell)
+                    property_availability,property_price,date_posted,property_sd,property_ed,sale_or_rent,crime_rate)
                     entry_execution(add_property_query,add_property_values)
                     #if property_type=='House':
                     house_id='h'+property_id
                     query='''insert into house(house_id,property_id,rooms,sqt_area) values (%s,%s,%s,%s)'''
                     values=(house_id,property_id,house_rooms,house_sft)
                     entry_execution(query,values)
+                    #inserting the near by schools
+                    if nearby_schools_list!='None':
+                        for school in nearby_schools_list:
+                            entry_execution('insert into nearby_schools(property_id,school_name) values (%s,%s)',(property_id,school,))
                     success_empty=st.empty()
                     success_empty.success('New property added')
                     time.sleep(2)
@@ -167,7 +179,111 @@ class proceed:
 
 
 
+        elif property_type=='Vacation Home':
+            with st.form('vacation_home',clear_on_submit=True):
+                vacation_home_rooms=st.number_input('Number of rooms',step=1,value=0)
+                vacation_home_sft=st.number_input('Square footage')
+                property_location=st.text_input('Property location',value='')
+                property_city=st.text_input('City',value='')
+                property_state=st.text_input('State',value='')
+                nearby_schools=st.text_input('Enter nearby school names(if exists) using commas',value='')
+                if len(nearby_schools)!=0:
+                    nearby_schools_list=nearby_schools.split(',')
 
+                else:
+                    nearby_schools_list='None'
+                crime_rate=st.number_input('Crime Rate',min_value=0.0,max_value=100.0,step=0.1)
+                property_desc=st.text_input('Description',value='')
+                if sale_or_rent=='Rental':
+                    todays_date=datetime.date.today()
+                    property_sd=st.date_input('Lease start date',min_value=todays_date)
+                    property_ed=st.date_input('Lease end date',value=property_sd,min_value=property_sd)
+                    property_price=st.number_input('Rental price per month',value=0.0,step=0.1)
+                elif sale_or_rent=='Sale':
+                    todays_date=datetime.date.today()
+                    property_sd=None
+                    property_ed=None
+                    property_price=st.number_input('Sale price',value=0.0,step=0.1)
+
+                property_availability=st.radio('Is it available? ',['Yes','No'],index=0)
+
+                if st.form_submit_button('Submit'):
+                    property_id='pr'+get_random_string(5)
+                    agents_id='a'+user_id
+                    date_posted=todays_date
+                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent,crime_rate)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                    add_property_values=(property_id,agents_id,property_type,property_city,property_state,property_location,property_desc,
+                    property_availability,property_price,date_posted,property_sd,property_ed,sale_or_rent,crime_rate)
+                    entry_execution(add_property_query,add_property_values)
+                    #if property_type=='vacation_home':
+                    vacation_home_id='v'+property_id
+                    query='''insert into vacation_home(vacation_home_id,property_id,rooms,sqt_area) values (%s,%s,%s,%s)'''
+                    values=(vacation_home_id,property_id,vacation_home_rooms,vacation_home_sft)
+                    entry_execution(query,values)
+                    #inserting the near by schools
+                    if nearby_schools_list!='None':
+                        for school in nearby_schools_list:
+                            entry_execution('insert into nearby_schools(property_id,school_name) values (%s,%s)',(property_id,school,))
+                    success_empty=st.empty()
+                    success_empty.success('New property added')
+                    time.sleep(2)
+                    success_empty.empty()
+                    st.experimental_rerun()
+
+
+        elif property_type=='Land':
+            with st.form('land',clear_on_submit=True):
+
+                land_sft=st.number_input('Square footage')
+                property_location=st.text_input('Property location',value='')
+                property_city=st.text_input('City',value='')
+                property_state=st.text_input('State',value='')
+                nearby_schools=st.text_input('Enter nearby school names(if exists) using commas',value='')
+                if len(nearby_schools)!=0:
+                    nearby_schools_list=nearby_schools.split(',')
+
+                else:
+                    nearby_schools_list='None'
+                crime_rate=st.number_input('Crime Rate',min_value=0.0,max_value=100.0,step=0.1)
+                property_desc=st.text_input('Description',value='')
+                if sale_or_rent=='Rental':
+                    todays_date=datetime.date.today()
+                    property_sd=st.date_input('Lease start date',min_value=todays_date)
+                    property_ed=st.date_input('Lease end date',value=property_sd,min_value=property_sd)
+                    property_price=st.number_input('Rental price per month',value=0.0,step=0.1)
+                elif sale_or_rent=='Sale':
+                    todays_date=datetime.date.today()
+                    property_sd=None
+                    property_ed=None
+                    property_price=st.number_input('Sale price',value=0.0,step=0.1)
+
+                property_availability=st.radio('Is it available? ',['Yes','No'],index=0)
+
+                if st.form_submit_button('Submit'):
+                    property_id='pr'+get_random_string(5)
+                    agents_id='a'+user_id
+                    todays_date=datetime.date.today()
+                    date_posted=todays_date
+                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent,crime_rate)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                    add_property_values=(property_id,agents_id,property_type,property_city,property_state,property_location,property_desc,
+                    property_availability,property_price,date_posted,property_sd,property_ed,sale_or_rent,crime_rate)
+                    entry_execution(add_property_query,add_property_values)
+                    #if property_type=='land':
+                    land_id='l'+property_id
+                    query='''insert into land(land_id,property_id,sqt_area) values (%s,%s,%s)'''
+                    values=(land_id,property_id,land_sft)
+                    entry_execution(query,values)
+                    #inserting the near by schools
+                    if nearby_schools_list!='None':
+                        for school in nearby_schools_list:
+                            entry_execution('insert into nearby_schools(property_id,school_name) values (%s,%s)',(property_id,school,))
+                    success_empty=st.empty()
+                    success_empty.success('New property added')
+                    time.sleep(2)
+                    success_empty.empty()
+                    st.experimental_rerun()
 
         elif property_type=='Apartment':
             with st.form('apartment',clear_on_submit=True):
@@ -178,17 +294,22 @@ class proceed:
                 property_location=st.text_input('Property location',value='')
                 property_city=st.text_input('City',value='')
                 property_state=st.text_input('State',value='')
+                nearby_schools=st.text_input('Enter nearby school names(if exists) using commas',value='')
+                if len(nearby_schools)!=0:
+                    nearby_schools_list=nearby_schools.split(',')
+                crime_rate=st.number_input('Crime Rate',min_value=0.0,max_value=100.0,step=0.1)
                 property_desc=st.text_input('Description',value='')
-                if rent_or_sell=='Rental':
+                if sale_or_rent=='Rental':
                     todays_date=datetime.date.today()
                     property_sd=st.date_input('Lease start date',min_value=todays_date)
                     st.write(property_sd)
                     property_ed=st.date_input('Lease end date',value=property_sd,min_value=property_sd)
-                    property_price=st.number_input('Rental price per month',value=0)
-                elif rent_or_sell=='Sale':
+                    property_price=st.number_input('Rental price per month',value=0.0,step=0.1)
+                elif sale_or_rent=='Sale':
+                    todays_date=datetime.date.today()
                     property_sd=None
                     property_ed=None
-                    property_price=st.number_input('Sale price',value=0)
+                    property_price=st.number_input('Sale price',value=0.0,step=0.1)
 
                 property_availability=st.radio('Is it available? ',['Yes','No'],index=0)
 
@@ -200,15 +321,19 @@ class proceed:
                     date_posted_empty=st.empty()
                     date_posted=date_posted_empty.date_input('')
                     date_posted_empty.empty()
-                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent)
-                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent,crime_rate)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
                     add_property_values=(property_id,agents_id,property_type,property_city,property_state,property_location,property_desc,
-                    property_availability,property_price,date_posted,property_sd,property_ed,rent_or_sell)
+                    property_availability,property_price,date_posted,property_sd,property_ed,sale_or_rent,crime_rate)
                     entry_execution(add_property_query,add_property_values)
                     apts_id='a'+property_id
                     query='''insert into apartment(apts_id,property_id,rooms,sqt_area) values (%s,%s,%s,%s)'''
                     values=(apts_id,property_id,apartment_rooms,apartment_sft)
                     entry_execution(query,values)
+                    #inserting the near by schools
+                    if nearby_schools_list!='None':
+                        for school in nearby_schools_list:
+                            entry_execution('insert into nearby_schools(property_id,school_name) values (%s,%s)',(property_id,school,))
                     success_empty=st.empty()
                     success_empty.success('New property added')
                     time.sleep(2)
@@ -226,37 +351,48 @@ class proceed:
                 property_location=st.text_input('Property location',value='')
                 property_city=st.text_input('City',value='')
                 property_state=st.text_input('State',value='')
+                nearby_schools=st.text_input('Enter nearby school names(if exists) using commas',value='')
+                if len(nearby_schools)!=0:
+                    nearby_schools_list=nearby_schools.split(',')
+
+                else:
+                    nearby_schools_list='None'
+                crime_rate=st.number_input('Crime Rate',min_value=0.0,max_value=100.0,step=0.1)
                 property_desc=st.text_input('Description',value='')
-                if rent_or_sell=='Rental':
+                if sale_or_rent=='Rental':
                     todays_date=datetime.date.today()
                     property_sd=st.date_input('Lease start date',min_value=todays_date)
                     st.write(property_sd)
                     property_ed=st.date_input('Lease end date',value=property_sd,min_value=property_sd)
                     property_price=st.number_input('Rental price per month')
-                elif rent_or_sell=='Sale':
+                elif sale_or_rent=='Sale':
+                    todays_date=datetime.date.today()
                     property_sd=None
                     property_ed=None
-                    property_price=st.number_input('Sale price',value=0)
+                    property_price=st.number_input('Sale price',value=0.0,step=0.1)
 
                 property_availability=st.radio('Is it available? ',['Yes','No'],index=0)
 
                 if st.form_submit_button('Submit'):
                     property_id='pr'+get_random_string(5)
                     agents_id='a'+user_id
-                    st.write(user_id)
-                    st.write(agents_id)
+
                     date_posted_empty=st.empty()
                     date_posted=date_posted_empty.date_input('')
                     date_posted_empty.empty()
-                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent)
-                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                    add_property_query='''insert into property(property_id,agents_id,type,city,state,location,description,availability,price,date_posted,start_date,end_date,sale_or_rent,crime_rate)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
                     add_property_values=(property_id,agents_id,property_type,property_city,property_state,property_location,property_desc,
-                    property_availability,property_price,date_posted,property_sd,property_ed,rent_or_sell)
+                    property_availability,property_price,date_posted,property_sd,property_ed,sale_or_rent,crime_rate)
                     entry_execution(add_property_query,add_property_values)
                     cb_id='c'+property_id
                     query='''insert into commercial_building(building_id,property_id,business_type,sqf_area) values (%s,%s,%s,%s)'''
                     values=(cb_id,property_id,business_type,cb_sft)
                     entry_execution(query,values)
+                    #inserting the near by schools
+                    if nearby_schools_list!='None':
+                        for school in nearby_schools_list:
+                            entry_execution('insert into nearby_schools(property_id,school_name) values (%s,%s)',(property_id,school,))
                     success_empty=st.empty()
                     success_empty.success('New property added')
                     time.sleep(2)
@@ -299,16 +435,45 @@ class proceed:
                     house_id='h'+property_id
                     delete_query_house = 'delete from house where property_id = %s'
                     delete_house_values = (property_id,)
+                    delete_schools='delete from nearby_schools where property_id=%s'
+                    delete_school_values=(property_id,)
+                    entry_execution(delete_schools,delete_school_values)
                     entry_execution(delete_query_house,delete_house_values)
                 elif pro[2]=='Apartment':
                     house_id='h'+property_id
                     delete_query_house = 'delete from apartment where property_id = %s'
                     delete_house_values = (property_id,)
                     entry_execution(delete_query_house,delete_house_values)
+                    delete_schools='delete from nearby_schools where property_id=%s'
+                    delete_school_values=(property_id,)
+                    entry_execution(delete_schools,delete_school_values)
+                    entry_execution(delete_query_house,delete_house_values)
                 elif pro[2]=='Commercial Building':
                     house_id='h'+property_id
                     delete_query_house = 'delete from commercial_building where property_id = %s'
                     delete_house_values = (property_id,)
+                    entry_execution(delete_query_house,delete_house_values)
+                    delete_schools='delete from nearby_schools where property_id=%s'
+                    delete_school_values=(property_id,)
+                    entry_execution(delete_schools,delete_school_values)
+                    entry_execution(delete_query_house,delete_house_values)
+                elif pro[2]=='Vacation Home':
+                    vacation_home='v'+property_id
+                    delete_query_house = 'delete from vacation_home where property_id = %s'
+                    delete_house_values = (property_id,)
+                    entry_execution(delete_query_house,delete_house_values)
+                    delete_schools='delete from nearby_schools where property_id=%s'
+                    delete_school_values=(property_id,)
+                    entry_execution(delete_schools,delete_school_values)
+                    entry_execution(delete_query_house,delete_house_values)
+                elif pro[2]=='Land':
+                    house_id='h'+property_id
+                    delete_query_house = 'delete from land where property_id = %s'
+                    delete_house_values = (property_id,)
+                    entry_execution(delete_query_house,delete_house_values)
+                    delete_schools='delete from nearby_schools where property_id=%s'
+                    delete_school_values=(property_id,)
+                    entry_execution(delete_schools,delete_school_values)
                     entry_execution(delete_query_house,delete_house_values)
                 delete_property_booking='delete from property_booking where property_id = %s'
                 delete_property_booking_values=(property_id,)
@@ -367,18 +532,14 @@ class proceed:
             rental_or_sale_index=['Rental','Sale'].index(pro[12])
             rental_or_sale=st.selectbox('Rental or Sale',options=['Rental','Sale'],index=rental_or_sale_index)
             property_type_index=['House','Apartment','Commercial Building'].index(pro[2])
-            property_type=st.selectbox('Property type',['House','Apartment','Commercial Building'],index=property_type_index)
+            property_type=st.selectbox('Property type',['House','Apartment','Commercial Building','Vacation Home','Land'],index=property_type_index)
             availability_index=['Yes','No'].index(availability)
             property_location=st.text_input('Property location',value=location)
             property_city=st.text_input('City',value=city)
             property_state=st.text_input('State',value=state)
             property_desc=st.text_input('Description',value=description)
-            property_price=st.text_input('Price',value=price)
-            if len(property_price)!=0:
-                try:
-                    property_price=float(property_price)
-                except:
-                    st.error('Please enter the numerical value')
+            property_price=st.number_input('Price',value=price,step=0.1)
+
             property_availability=st.radio('Is it available? ',options=['Yes','No'],index=availability_index)
             condition=(sale_or_rent==rental_or_sale)&(property_type==type)&(property_city==city)&(property_state==state)&(property_location==location)&(property_desc==description)&(property_availability==availability)&(property_price==price)
 
@@ -505,7 +666,7 @@ class proceed:
             user_id=record[0]
 
         else:
-            property_type=st.selectbox('Property type',['House','Apartment','Commercial Building'])
+            property_type=st.selectbox('Property type',['House','Apartment','Commercial Building','Vacation Home','Land'])
             if property_type=='House':
                 properties_query='''select location from property inner join house on house.property_id=property.property_id'''
                 properties_=query_execution(properties_query)
@@ -538,13 +699,63 @@ class proceed:
                 sale_or_rent_choice=st.radio('Show',['Sale','Rental'])
                 min_price=st.number_input('Minimum price')
                 max_price=st.number_input('Maximum price')
-                properties_apartment_query='''select * from property inner join apartment on apartment.property_id=property.property_id where house.rooms=%s
+                sort_by=st.radio('Order price by',['Low to high','High to Low'])
+                if sort_by=='Low to high':
+                    query_ext=''' order by price desc'''
+                else:
+                    query_ext=''' order by price asc'''
+                properties_apartment_query='''select * from property inner join apartment on apartment.property_id=property.property_id where apartment.rooms=%s
                 and location=%s and sale_or_rent=%s and price>=%s and price<=%s'''+query_ext
                 properties_apartment_query_values=(bedrooms_num,location,sale_or_rent_choice,min_price,max_price)
                 if st.button('Apply filter',key='apartment filter'):
                     properties=query_execution(properties_apartment_query,properties_apartment_query_values)
+
+            elif property_type=='Vacation Home':
+                properties_query='''select location from property inner join vacation_home on vacation_home.property_id=property.property_id'''
+                properties_=query_execution(properties_query)
+                properties_location=[]
+                for i in properties_:
+                    properties_location.append(i[0])
+                bedrooms_num=st.number_input('Number of bedrooms',step=1)
+                location=st.selectbox('Location',options=properties_location)
+                sale_or_rent_choice=st.radio('Show',['Sale','Rental'])
+                min_price=st.number_input('Minimum price')
+                max_price=st.number_input('Maximum price')
+                sort_by=st.radio('Order price by',['Low to high','High to Low'])
+                if sort_by=='Low to high':
+                    query_ext=''' order by price desc'''
+                else:
+                    query_ext=''' order by price asc'''
+                properties_vc_query='''select * from property inner join vacation_home on vacation_home.property_id=property.property_id where vacation_home.rooms=%s
+                and location=%s and sale_or_rent=%s and price>=%s and price<=%s'''+query_ext
+                properties_vc_query_values=(bedrooms_num,location,sale_or_rent_choice,min_price,max_price)
+                if st.button('Apply filter',key='house filter'):
+                    properties=query_execution(properties_vc_query,properties_vc_query_values)
+
+            elif property_type=='Land':
+                properties_query='''select location from property inner join land on land.property_id=property.property_id'''
+                properties_=query_execution(properties_query)
+                properties_location=[]
+                for i in properties_:
+                    properties_location.append(i[0])
+
+                location=st.selectbox('Location',options=properties_location)
+                sale_or_rent_choice=st.radio('Show',['Sale','Rental'])
+                min_price=st.number_input('Minimum price')
+                max_price=st.number_input('Maximum price')
+                sort_by=st.radio('Order price by',['Low to high','High to Low'])
+                if sort_by=='Low to high':
+                    query_ext=''' order by price desc'''
+                else:
+                    query_ext=''' order by price asc'''
+                properties_land_query='''select * from property inner join land on land.property_id=property.property_id where
+                location=%s and sale_or_rent=%s and price>=%s and price<=%s'''+query_ext
+                properties_land_query_values=(location,sale_or_rent_choice,min_price,max_price)
+                if st.button('Apply filter',key='house filter'):
+                    properties=query_execution(properties_land_query,properties_land_query_values)
+
             else:
-                properties_query='''select location from property inner join commercial_building on commercial_building.property_id=property.propety_id'''
+                properties_query='''select location from property inner join commercial_building on commercial_building.property_id=property.property_id'''
                 properties_=query_execution(properties_query)
                 properties_location=[]
                 for i in properties_:
@@ -553,8 +764,13 @@ class proceed:
                 sale_or_rent_choice=st.radio('Show',['Sale','Rental'])
                 min_price=st.number_input('Minimum price')
                 max_price=st.number_input('Maximum price')
+                sort_by=st.radio('Order price by',['Low to high','High to Low'])
+                if sort_by=='Low to high':
+                    query_ext=''' order by price desc'''
+                else:
+                    query_ext=''' order by price asc'''
                 properties_cb_query='''select * from property inner join commercial_building on commercial_building.property_id=property.property_id where
-                location=%s and price>=%s and price<=%s and rent_or_sell=%s'''+query_ext
+                location=%s and price>=%s and price<=%s and sale_or_rent=%s'''+query_ext
                 properties_cb_query_values=(location,min_price,max_price,sale_or_rent_choice)
                 if st.button('Apply filter',key='commercial building filter'):
                     properties=query_execution(properties_cb_query,properties_cb_query_values)
@@ -586,28 +802,32 @@ class proceed:
             price=pro[9]
             property_sd=pro[10]
             property_ed=pro[11]
-            rent_or_sell=pro[12]
+            sale_or_rent=pro[12]
+            crime_rate=pro[13]
+            schools_query='''select school_name from nearby_schools where property_id=%s'''
+            schools_query_values=(property_id,)
+            schools=query_execution(schools_query,schools_query_values)
             button_empty=st.empty()
             col1,col2=st.columns(2)
             with col1:
                 st.write('Property type: ')
-                st.write('Location: ')
-                st.write('City: ')
-                st.write('State: ')
-                st.write('Description: ')
                 if (type=='House'):
                     st.write('Number of bedrooms:')
                 elif (type=='Apartment'):
                     st.write('Number of bedrooms:')
                 else:
                     pass
+                st.write('Location: ')
+                st.write('City: ')
+                st.write('State: ')
                 st.write('Price: ')
+                st.write('Near By Schools: ')
+                st.write('Crime rate: ')
+                st.write('Description: ')
+
+
             with col2:
                 st.write(type)
-                st.write(location)
-                st.write(city)
-                st.write(state)
-                st.write(description)
                 if (type=='House'):
                     bedrooms_count='''select house.rooms from house inner join property on property.property_id=house.property_id where property.property_id=%s'''
                     bedrooms_count_values=(property_id,)
@@ -617,10 +837,28 @@ class proceed:
                     bedrooms_count='''select apartment.rooms from apartment inner join property on property.property_id=apartment.property_id where property.property_id=%s'''
                     bedrooms_count_values=(property_id,)
                     bedroom_records=query_execution(bedrooms_count,bedrooms_count_values)
-                    st.write(str(bedroom_records[0][0]))
+                    if len(bedroom_records)!=0:
+                        st.write(str(bedroom_records[0][0]))
+                    else:
+                        st.write('Not provided')
                 else:
                     pass
+                st.write(location)
+                st.write(city)
+                st.write(state)
                 st.write(str(price))
+                school_name=''
+                if len(schools)!=0:
+                    for school in schools:
+                        school_name=school_name+school[0]+', '
+                else:
+                    st.write('None')
+                st.write(school_name)
+                st.write(str(crime_rate))
+                st.write(description)
+
+
+
 
             if availability=='No':
                 st.info('Not available')
@@ -661,6 +899,12 @@ class proceed:
                                 updated_availability='No'
                                 update_property_values=(updated_availability,property_id,)
                                 entry_execution(update_property_query,update_property_values)
+                                #update reward prgram.
+                                reward_execution=query_execution('select reward_points from reward_program where renter_id=%s',(renter_id,))
+                                if len(reward_execution)!=0:
+                                    points=int(reward_execution[0][0])+int(price)
+                                    entry_execution('update reward_program set reward_points = %s where renter_id = %s',(points,renter_id,))
+
                                 st.success('Success')
 
                                 st.experimental_rerun()
@@ -691,6 +935,11 @@ class proceed:
                                 updated_availability='No'
                                 update_property_values=(updated_availability,property_id,)
                                 entry_execution(update_property_query,update_property_values)
+                                #update reward prgram.
+                                reward_execution=query_execution('select reward_points from reward_program where renter_id=%s',(renter_id,))
+                                if len(reward_execution)!=0:
+                                    points=int(reward_execution[0][0])+int(price)
+                                    entry_execution('update reward_program set reward_points = %s where renter_id = %s',(points,renter_id,))
                                 st.success('Property booked')
                                 time.sleep(1)
 
@@ -754,34 +1003,38 @@ class proceed:
             for cc in credit_card_records:
                 cc_num.append(cc[1])
             #st.write(cc_num)
-            cc_select=st.selectbox('',cc_num)
-            if cc_select!='Select':
-                #st.write(credit_card_records)
-                cc_index=cc_num.index(cc_select)
-                current_card=credit_card_records[cc_index]
-                card_id=current_card[0]
-                card_number=current_card[1]
-                renters_id=current_card[2]
-                address=current_card[3]
-                expiry_date=current_card[4]
-                #st.write(current_card)
-                col1,col2=st.columns(2)
-                with col1:
-                    st.write('Card Number: ')
-                    st.write('Expiry: ')
-                    st.write('Address: ')
-                with col2:
-                    st.write(card_number)
-                    st.write(expiry_date)
-                    st.write(address)
-                if st.button('Delete'):
-                    delete_card_query='''delete from credit_card where card_number = %s'''
-                    values=(card_number,)
-                    entry_execution(delete_card_query,values)
-                    st.success('Card removed successfully')
-                    time.sleep(1)
-                    cc_select='Select'
-                    st.experimental_rerun()
+            if len(cc_num)==0:
+                st.write('No cards found')
+            if len(cc_num)!=0:
+                cc_select=st.selectbox('',cc_num)
+                if cc_select!='Select':
+                    #st.write(credit_card_records)
+                    cc_index=cc_num.index(cc_select)
+                    current_card=credit_card_records[cc_index]
+                    card_id=current_card[0]
+                    card_number=current_card[1]
+                    renters_id=current_card[2]
+                    address=current_card[3]
+                    expiry_date=current_card[4]
+                    #st.write(current_card)
+                    col1,col2=st.columns(2)
+                    with col1:
+                        st.write('Card Number: ')
+                        st.write('Expiry: ')
+                        st.write('Address: ')
+                    with col2:
+                        st.write(card_number)
+                        st.write(expiry_date)
+                        st.write(address)
+                    if st.button('Delete'):
+                        entry_execution('update property_booking set creditcard_id=%s where creditcard_id=%s',('',card_number,))
+                        delete_card_query='''delete from credit_card where card_number = %s'''
+                        values=(card_number,)
+                        entry_execution(delete_card_query,values)
+                        st.success('Card removed successfully')
+                        time.sleep(1)
+                        cc_select='Select'
+                        st.experimental_rerun()
 
 
         if select_op=='Modify card':
@@ -793,33 +1046,45 @@ class proceed:
             cc_num=[]
             for cc in credit_card_records:
                 cc_num.append(cc[1])
-            cc_select=st.selectbox('',cc_num)
-            if cc_select!='Select':
+            if len(cc_num)==0:
+                st.info('No cards found')
+            else:
+                cc_select=st.selectbox('',cc_num)
+                if cc_select!='Select':
 
-                cc_index=cc_num.index(cc_select)
-                current_card=credit_card_records[cc_index]
-                card_id=current_card[0]
-                card_number=current_card[1]
-                renters_id=current_card[2]
-                address=current_card[3]
-                expiry_date=current_card[4]
-                new_card_number=st.text_input('Card Number: ',value=card_number)
-                new_expiry_date=st.text_input('Expiry: ',value=expiry_date)
-                new_address=st.text_input('Address: ',value=address)
-                if (new_card_number==card_number)&(new_expiry_date==expiry_date)&(address==new_address):
-                    pass
-                else:
-                    if st.button('Modify'):
-                        update_query='''UPDATE credit_card SET card_number = %s, card_expiry_date = %s, address = %s where creditcard_id = %s'''
-                        values=(card_number,expiry_date,address,card_id)
-                        entry_execution(update_query,values)
-                        st.success('Modified successfully')
+                    cc_index=cc_num.index(cc_select)
+                    current_card=credit_card_records[cc_index]
+                    card_id=current_card[0]
+                    card_number=current_card[1]
+                    renters_id=current_card[2]
+                    address=current_card[3]
+                    expiry_date=current_card[4]
+                    new_card_number=st.text_input('Card Number: ',value=card_number)
+                    new_expiry_date=st.text_input('Expiry: ',value=expiry_date)
+                    new_address=st.text_input('Address: ',value=address)
+                    if (new_card_number==card_number)&(new_expiry_date==expiry_date)&(address==new_address):
+                        pass
+                    else:
+                        if st.button('Modify'):
+                            update_query='''UPDATE credit_card SET card_number = %s, card_expiry_date = %s, address = %s where creditcard_id = %s'''
+                            values=(new_card_number,new_expiry_date,new_address,card_id)
+                            entry_execution(update_query,values)
+                            st.success('Modified successfully')
 
 
 
 
     def renter(self):
+        record=ob_login.user_status_list[-1]
+        user_id=record[0]
         st.header('Renter page')
+        st.subheader('Welcome')
+        renter_id='r'+user_id
+        reward_program_query='''select reward_points from reward_program where renter_id = %s'''
+        query_execution_values=(renter_id,)
+        rewards=query_execution(reward_program_query,query_execution_values)
+        if len(rewards)!=0:
+            st.write('Reward points: ',rewards[0][0])
         renter_options=st.selectbox('Please select the options',['Search for the properties','Manage payments','Booked Properties'])
         if renter_options=='Manage payments':
             ob_pro.manage_payments()
@@ -898,6 +1163,7 @@ def register():
     move_in_date_empty=st.empty()
     preferedlocation_empty=st.empty()
     budget_empty=st.empty()
+    reward_or_not_empty=st.empty()
     ad_empty=st.empty()
     pass_empty=st.empty()
     repass_empty=st.empty()
@@ -917,11 +1183,12 @@ def register():
         date_empty.empty()
         move_in_date=move_in_date_empty.date_input('Move-In Date',min_value=todays_date)
         preferedlocation=preferedlocation_empty.text_input('Prefered Location')
-        budget=budget_empty.text_input('Budget')
+        budget=budget_empty.number_input('Budget',step=0.1)
+        reward_or_not=reward_or_not_empty.radio('Want to join reward program?',options=['Yes','No'])
 
     address=ad_empty.text_input('Address')
-    password=pass_empty.text_input('Enter password')
-    repassword=repass_empty.text_input('Re Enter the password')
+    password=pass_empty.text_input('Enter password',type='password')
+    repassword=repass_empty.text_input('Re Enter the password',type='password')
     if register_button_empty.button('Register'):
         user_existed_query='''select * from users where email_id = %s and user_type = %s'''
         user_existed_value=(email_id,user_type,)
@@ -950,6 +1217,8 @@ def register():
                         renter_register_q='''insert into renter(renters_id,user_id,move_in_date,preferedlocation,budget) values (%s,%s,%s,%s,%s)'''
                         renter_register_values=(renters_id,user_id,move_in_date,preferedlocation,budget)
                         entry_execution(renter_register_q,renter_register_values)
+                        if reward_or_not=='Yes':
+                            entry_execution('insert into reward_program(renter_id,reward_points) values (%s,%s)',(renters_id,0))
                         move_in_date_empty.empty()
                         preferedlocation_empty.empty()
                         budget_empty.empty()
