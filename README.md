@@ -1,6 +1,6 @@
 # DB_project
 ## Group Number 7
-** Academic project for CS425 **
+**Academic project for CS425**
 Real Estate Management System
 By Kasargod Kailash Chandra Shenoy( A20526053 ), Tirumalesh Nagothi( A20520569 ), Sai Charan Battula
 
