@@ -531,7 +531,7 @@ class proceed:
 
             rental_or_sale_index=['Rental','Sale'].index(pro[12])
             rental_or_sale=st.selectbox('Rental or Sale',options=['Rental','Sale'],index=rental_or_sale_index)
-            property_type_index=['House','Apartment','Commercial Building'].index(pro[2])
+            property_type_index=['House','Apartment','Commercial Building','Vacation Home','Land'].index(pro[2])
             property_type=st.selectbox('Property type',['House','Apartment','Commercial Building','Vacation Home','Land'],index=property_type_index)
             availability_index=['Yes','No'].index(availability)
             property_location=st.text_input('Property location',value=location)
@@ -866,7 +866,7 @@ class proceed:
                 search_options=st.selectbox('Select the action',['View','Book'],key=pro[0])
                 if search_options=='View':
                     pass
-                else:
+                elif search_options=='Book':
                     renter_id='r'+user_id
                     query='''select * from credit_card where renters_id = %s'''
                     values=(renter_id,)
@@ -1027,7 +1027,6 @@ class proceed:
                         st.write(expiry_date)
                         st.write(address)
                     if st.button('Delete'):
-                        entry_execution('update property_booking set creditcard_id=%s where creditcard_id=%s',('',card_number,))
                         delete_card_query='''delete from credit_card where card_number = %s'''
                         values=(card_number,)
                         entry_execution(delete_card_query,values)
